@@ -48,27 +48,27 @@ public class CardinalDirection
 
     public static CardinalDirection Random()
     {
-        return Random(new CardinalDirection[0]);
+        return Random(s_opposites.Keys.ToArray());
     }
 
-    public static CardinalDirection Random(CardinalDirection[] excludedDirections)
+    public static CardinalDirection Random(CardinalDirection[] possibleDirections)
     {
-        Random random = new Random();
-        CardinalDirection[] possibleDirections = GetPossibleDirections(excludedDirections);
-        
-        return possibleDirections[random.Next(0, possibleDirections.Length)];
+        return possibleDirections[new Random().Next(0, possibleDirections.Length)];
     }
 
-    private static CardinalDirection[] GetPossibleDirections(CardinalDirection[] excludedDirections)
+    public static CardinalDirection[] ExcludeDirectionFrom(CardinalDirection[] directions,
+        CardinalDirection excludedDirection)
     {
         List<CardinalDirection> possibleDirections = new List<CardinalDirection>();
-
-        foreach (CardinalDirection direction in s_opposites.Keys)
+        
+        for (int i = 0; i < directions.Length; i++)
         {
-            if (!excludedDirections.Contains(direction))
+            if (directions[i] == excludedDirection)
             {
-                possibleDirections.Add(direction);
+                continue;
             }
+            
+            possibleDirections.Add(directions[i]);
         }
         
         return possibleDirections.ToArray();

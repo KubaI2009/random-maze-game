@@ -7,9 +7,8 @@ public class MazeCreator
     
     private Vector2Int _pos;
     private CardinalDirection _direction;
-    private CardinalDirection _sourceDirection;
 
-    private int _stepCount;
+    private int _stepLength;
 
     public Vector2Int Pos
     {
@@ -35,18 +34,11 @@ public class MazeCreator
         private set { _direction = value; }
     }
 
-    public CardinalDirection SourceDirection
-    {
-        get { return _sourceDirection; }
-        private set { _sourceDirection = value; }
-    }
-
-    public MazeCreator(int mazeHeight, int mazeWidth, Vector2Int startingPos, int stepCount)
+    public MazeCreator(int mazeHeight, int mazeWidth, Vector2Int startingPos, int stepLength)
     {
         _maze = new MazeBoard(mazeHeight, mazeWidth);
         _pos = startingPos;
-        _stepCount = stepCount;
-        _sourceDirection = CardinalDirection.West;
+        _stepLength = stepLength;
         _direction = GetRandomDirection();
     }
 
@@ -58,7 +50,9 @@ public class MazeCreator
         
         PlaceBridges();
         
-        PlaceStartAndFinish(startPos, Pos);
+        _maze.AddRandomConnections(_stepLength, 5);
+        
+        PlaceStartAndFinish(startPos, GetFinishPos());
         
         Pos = startPos;
         
@@ -72,16 +66,14 @@ public class MazeCreator
 
     private void PlaceBridges()
     {
-        for (int i = 0; i < 10; i++)
+        while (!_maze.IsFilled(_stepLength))
         {
             Direction = GetRandomDirection();
             
             Move();
-            
-            SourceDirection = Direction.Opposite();
         }
 
-        Console.WriteLine($"--{Pos}--");
+        //Console.WriteLine($"--{Pos}--");
     }
 
     private void PlaceStartAndFinish(Vector2Int startPos, Vector2Int finishPos)
@@ -94,36 +86,30 @@ public class MazeCreator
     {
         CardinalDirection newSourceDirection = Direction.Opposite();
         
-        Console.WriteLine($"Target position - {GetTargetPosition()}");
-        Console.WriteLine($"Target direction - {Direction}");
-        Console.WriteLine($"Source direction - {SourceDirection}");
-        Console.WriteLine($"New source direction - {newSourceDirection}");
+        //Console.WriteLine($"Target position - {GetTargetPosition()}");
+        //Console.WriteLine($"Target direction - {Direction}");
 
-        Console.WriteLine(_maze.GetTile(GetTargetPosition()));
+        //Console.WriteLine(_maze.GetTile(GetTargetPosition()));
         
         if (_maze.GetTile(GetTargetPosition()) != TileType.Pit)
         {
             Hop();
-            
-            SourceDirection = newSourceDirection;
         
-            _maze.PrintRepresentation();
+            //_maze.PrintRepresentation();
             
             return;
         }
         
         LeaveTrail();
-            
-        SourceDirection = newSourceDirection;
         
-        _maze.PrintRepresentation();
+        //_maze.PrintRepresentation();
     }
 
     public void LeaveTrail()
     {
         HopTo(Pos);
         
-        for (int i = 0; i < _stepCount; i++)
+        for (int i = 0; i < _stepLength; i++)
         {
             HopTo(GetTargetPositionOfVelocity(Direction.NormalizedVelocity));
         }
@@ -136,17 +122,17 @@ public class MazeCreator
 
     public void HopTo(Vector2Int targetPos)
     {
-        Console.Write(targetPos);
+        //Console.Write(targetPos);
         
         try
         {
             _maze.SetTile(targetPos, _maze.GetTile(targetPos) == TileType.Pit ? TileType.Bridge : _maze.GetTile(targetPos));
             
-            Console.WriteLine();
+            //Console.WriteLine();
         }
         catch (IndexOutOfRangeException)
         {
-            Console.WriteLine(" error");
+            //Console.WriteLine(" error");
             
             return;
         }
@@ -156,24 +142,75 @@ public class MazeCreator
 
     private CardinalDirection GetRandomDirection()
     {
-        List<CardinalDirection> excludedDirections = new List<CardinalDirection>() { SourceDirection };
-        
-        CardinalDirection direction = CardinalDirection.Random(excludedDirections.ToArray());
-
-        while (!DirectionLeadsSomewhere(direction))
+        List<CardinalDirection> possibleDirections = new List<CardinalDirection>()
         {
-            excludedDirections.Add(direction);
-            
-            direction = CardinalDirection.Random(excludedDirections.ToArray());
-        }
+            CardinalDirection.West,
+            CardinalDirection.North,
+            CardinalDirection.East,
+            CardinalDirection.South
+        };
         
-        return direction;
-        //return CardinalDirection.East;
+        CardinalDirection direction;
+        
+        while (true)
+        {
+            if (possibleDirections.Count == 0)
+            {
+                possibleDirections = new List<CardinalDirection>()
+                {
+                    CardinalDirection.West,
+                    CardinalDirection.North,
+                    CardinalDirection.East,
+                    CardinalDirection.South
+                };
+
+                while (true)
+                {
+                    direction = CardinalDirection.Random(possibleDirections.ToArray());
+
+                    if (DirectionLeadsSomewhere(direction))
+                    {
+                        return direction;
+                    }
+            
+                    possibleDirections.Remove(direction);
+                }
+            }
+            
+            direction = CardinalDirection.Random(possibleDirections.ToArray());
+
+            if (DirectionIsValid(direction))
+            {
+                return direction;
+            }
+            
+            possibleDirections.Remove(direction);
+        }
+    }
+
+    private bool DirectionIsValid(CardinalDirection direction)
+    {
+        return DirectionLeadsSomewhere(direction) && DirectionLeadsIntoPit(direction);
+    }
+
+    private bool DirectionLeadsIntoPit(CardinalDirection direction)
+    {
+        Vector2Int velocity = direction.GetScaledVelocity(_stepLength);
+        Vector2Int newPos = new Vector2Int(X + velocity.X, Y + velocity.Y);
+
+        try
+        {
+            return _maze.GetTile(newPos.Y, newPos.X) == TileType.Pit;
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return false;
+        }
     }
 
     private bool DirectionLeadsSomewhere(CardinalDirection direction)
     {
-        Vector2Int velocity = direction.GetScaledVelocity(_stepCount);
+        Vector2Int velocity = direction.GetScaledVelocity(_stepLength);
         Vector2Int newPos = new Vector2Int(X + velocity.X, Y + velocity.Y);
 
         try
@@ -190,7 +227,7 @@ public class MazeCreator
 
     public Vector2Int GetTargetPosition()
     {
-        Vector2Int velocity = Direction.GetScaledVelocity(_stepCount);
+        Vector2Int velocity = Direction.GetScaledVelocity(_stepLength);
 
         //Console.WriteLine($"Target positionnnnnnnnn - {new Vector2Int(X + velocity.X, Y + velocity.Y)}");
         
@@ -200,5 +237,24 @@ public class MazeCreator
     public Vector2Int GetTargetPositionOfVelocity(Vector2Int velocity)
     {
         return new Vector2Int(X + velocity.X, Y + velocity.Y);
+    }
+
+    private Vector2Int GetFinishPos()
+    {
+        //Console.WriteLine("Getting finish position");
+        
+        for (int i = _maze.Count - 1; i >= 0; i--)
+        {
+            Vector2Int pos = _maze.PositionOfIndex(i);
+
+            //Console.WriteLine(pos);
+
+            if (_maze.GetTile(pos) == TileType.Bridge)
+            {
+                return pos;
+            }
+        }
+        
+        return new Vector2Int(0, 0);
     }
 }

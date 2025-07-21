@@ -101,6 +101,56 @@ public class MazeBoard
         }
     }
 
+    public bool IsFilled()
+    {
+        return IsFilled(1);
+    }
+
+    public bool IsFilled(int stepLength)
+    {
+        for (int i = 0; i < _board.Length; i++)
+        {
+            Vector2Int pos = PositionOfIndex(i);
+
+            if (pos.X % stepLength == 0
+                && pos.Y % stepLength == 0
+                && GetTile(pos) == TileType.Pit)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    public void AddRandomConnections(int stepLength, int maxAmount)
+    {
+        for (int i = 0; i < _board.Length; i++)
+        {
+            if (maxAmount <= 0)
+            {
+                return;
+            }
+            
+            Vector2Int pos = PositionOfIndex(i);
+
+            if (pos.X % stepLength == 0
+                && pos.Y % stepLength == 0
+                && GetTile(pos) == TileType.Pit
+                && new Random().Next(10) == 0)
+            {
+                SetTile(pos, TileType.Bridge);
+                
+                maxAmount--;
+            }
+        }
+
+        /*if (amount > 0)
+        {
+            AddRandomConnections(stepLength, amount);
+        }*/
+    }
+
     private static TileType[,] CreateBoard(int height, int width)
     {
         TileType[,] board = new TileType[height, width];
