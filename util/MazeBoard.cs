@@ -33,7 +33,7 @@ public class MazeBoard
 
     public TileType GetTile(Vector2Int pos)
     {
-        return GetTile(pos.X, pos.Y);
+        return GetTile(pos.Y, pos.X);
     }
 
     public TileType GetTile(int y, int x)
@@ -58,7 +58,7 @@ public class MazeBoard
 
     public Vector2Int PositionOfIndex(int i)
     {
-        return new Vector2Int(i / Width, i % Width);
+        return new Vector2Int(i % Width, i / Width);
     }
 
     public void PrintRepresentation()
@@ -93,6 +93,14 @@ public class MazeBoard
         Console.WriteLine("-");
     }
 
+    public void Clear()
+    {
+        for (int i = 0; i < _board.Length; i++)
+        {
+            SetTile(PositionOfIndex(i), TileType.Pit);
+        }
+    }
+
     private static TileType[,] CreateBoard(int height, int width)
     {
         TileType[,] board = new TileType[height, width];
@@ -102,7 +110,7 @@ public class MazeBoard
             int y = i / width;
             int x = i % width;
             
-            board[y, x] = TileType.Wall;
+            board[y, x] = TileType.Pit;
         }
         
         return board;

@@ -2,8 +2,8 @@
 
 public class TileType
 {
-    public static readonly TileType Empty = new TileType('E');
-    public static readonly TileType Wall = new TileType('W');
+    public static readonly TileType Bridge = new TileType('+');
+    public static readonly TileType Pit = new TileType('=');
     public static readonly TileType Start = new TileType('S');
     public static readonly TileType Finish = new TileType('F');
     
@@ -17,5 +17,10 @@ public class TileType
     protected TileType(char symbol)
     {
         _symbol = symbol;
+    }
+
+    public override string ToString()
+    {
+        return $"TileType: {Symbol}";
     }
 }

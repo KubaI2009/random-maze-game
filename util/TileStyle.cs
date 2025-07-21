@@ -6,8 +6,8 @@ public struct TileStyle
 {
     private static readonly Dictionary<TileType, TileStyle> s_tileStyles = new Dictionary<TileType, TileStyle>()
     {
-        {TileType.Empty, new TileStyle("", new SolidColorBrush(Colors.SlateGray))},
-        {TileType.Wall, new TileStyle("", new SolidColorBrush(Colors.Black))},
+        {TileType.Bridge, new TileStyle("", new SolidColorBrush(Colors.SlateGray))},
+        {TileType.Pit, new TileStyle("", new SolidColorBrush(Colors.Black))},
         {TileType.Start, new TileStyle("S", new SolidColorBrush(Colors.GreenYellow))},
         {TileType.Finish, new TileStyle("F", new SolidColorBrush(Colors.DodgerBlue))}
     };
@@ -31,6 +31,11 @@ public struct TileStyle
         _color = color;
     }
 
+    public override string ToString()
+    {
+        return $"TileStyle: [{_text}, {_color}]";
+    }
+
     public static TileStyle Of(TileType tile)
     {
         try
@@ -39,7 +44,7 @@ public struct TileStyle
         }
         catch (KeyNotFoundException)
         {
-            return s_tileStyles[TileType.Empty];
+            return s_tileStyles[TileType.Bridge];
         }
     }
 }

@@ -24,7 +24,7 @@ public partial class GameWindow : Window
     private const int _width = 15;
     
     private TextBlock[,] _renderedBoard;
-    private MazeBoard _metaMaze;
+    private MazeBoard _maze;
     
     private int _ticks;
     private DispatcherTimer _tickTimer;
@@ -57,11 +57,13 @@ public partial class GameWindow : Window
 			{ tbx14_0, tbx14_1, tbx14_2, tbx14_3, tbx14_4, tbx14_5, tbx14_6, tbx14_7, tbx14_8, tbx14_9, tbx14_10, tbx14_11, tbx14_12, tbx14_13, tbx14_14 }
 		};
         
-        _metaMaze = new MazeBoard(_height, _width);
+        _maze = new MazeBoard(_height, _width);
+        
+        RandomizeMaze();
         
         InitTickTimer();
         
-        //_metaMaze.SetTile(4, TileType.Empty);
+        //CardinalDirection.PrintDebugInfo();
     }
     
     //game loop start
@@ -80,15 +82,20 @@ public partial class GameWindow : Window
 
     private void RenderBoard(Object? sender, EventArgs? e)
     {
-	    for (int i = 0; i < _metaMaze.Count; i++)
+	    for (int i = 0; i < _maze.Count; i++)
 	    {
-		    Vector2Int pos = _metaMaze.PositionOfIndex(i);
-		    TileStyle style = TileStyle.Of(_metaMaze.GetTile(i));
+		    Vector2Int pos = _maze.PositionOfIndex(i);
+		    TileStyle style = TileStyle.Of(_maze.GetTile(i));
 
 		    _renderedBoard[pos.Y, pos.X].Background = style.Color;
 		    _renderedBoard[pos.Y, pos.X].Text = style.Text;
 	    }
 
 	    //_metaMaze.PrintRepresentation();
+    }
+
+    private void RandomizeMaze()
+    {
+	    _maze = new MazeCreator(_height, _width, new Vector2Int(0, 0), 2).CreateMaze();
     }
 }
