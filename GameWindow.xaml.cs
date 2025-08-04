@@ -18,16 +18,34 @@ namespace RandomMazeGame;
 /// </summary>
 public partial class GameWindow : Window
 {
+	private static readonly Dictionary<Key, Vector2Int> s_displacements = new Dictionary<Key, Vector2Int>()
+	{
+		{Key.Left, CardinalDirection.West.NormalizedVelocity},
+		{Key.Up, CardinalDirection.North.NormalizedVelocity},
+		{Key.Right, CardinalDirection.East.NormalizedVelocity},
+		{Key.Down, CardinalDirection.South.NormalizedVelocity},
+		{Key.A, CardinalDirection.West.NormalizedVelocity},
+		{Key.W, CardinalDirection.North.NormalizedVelocity},
+		{Key.D, CardinalDirection.East.NormalizedVelocity},
+		{Key.S, CardinalDirection.South.NormalizedVelocity}
+	};
+	
 	private static readonly double s_fps = 0.01d;
 	
     private const int _height = 15;
     private const int _width = 15;
+
+    private Vector2Int _rootPos;
     
     private TextBlock[,] _renderedBoard;
     private MazeBoard _maze;
     
+    private Player _player;
+    
     private int _ticks;
     private DispatcherTimer _tickTimer;
+
+    private int _moveCounter;
 
     public GameWindow()
     {
@@ -37,6 +55,12 @@ public partial class GameWindow : Window
     private void InitGame(Object? sender, EventArgs? e)
     {
         InitializeComponent();
+
+        this.KeyDown += MovePlayer;
+        
+        tbxInfo.Text = "You are \u2649";
+        
+        btnReset.Visibility = Visibility.Collapsed;
         
         _renderedBoard = new TextBlock[_height, _width]
         {
@@ -56,10 +80,16 @@ public partial class GameWindow : Window
 			{ tbx13_0, tbx13_1, tbx13_2, tbx13_3, tbx13_4, tbx13_5, tbx13_6, tbx13_7, tbx13_8, tbx13_9, tbx13_10, tbx13_11, tbx13_12, tbx13_13, tbx13_14 },
 			{ tbx14_0, tbx14_1, tbx14_2, tbx14_3, tbx14_4, tbx14_5, tbx14_6, tbx14_7, tbx14_8, tbx14_9, tbx14_10, tbx14_11, tbx14_12, tbx14_13, tbx14_14 }
 		};
+
+        _moveCounter = 0;
+
+        _rootPos = new Vector2Int(0, 0);
         
         _maze = new MazeBoard(_height, _width);
         
         RandomizeMaze();
+        
+        _player = new Player(_rootPos, _maze);
         
         InitTickTimer();
         
@@ -73,11 +103,30 @@ public partial class GameWindow : Window
         
 	    _tickTimer = new DispatcherTimer();
 
+	    _tickTimer.Tick += UpdateData;
 	    _tickTimer.Tick += RenderBoard;
+	    _tickTimer.Tick += (object? sender, EventArgs? e) => { _ticks++; };
         
 	    _tickTimer.Interval = TimeSpan.FromSeconds(s_fps);
 	    
 	    _tickTimer.Start();
+    }
+
+    private void EndGame()
+    {
+	    this.KeyDown -= MovePlayer;
+	    
+	    tbxInfo.Text = "You reached the end!";
+	    
+	    btnReset.Visibility = Visibility.Visible;
+    }
+
+    private void UpdateData(Object? sender, EventArgs? e)
+    {
+	    if (_maze.GetTile(_player.Pos) == TileType.Finish)
+	    {
+		    EndGame();
+	    }
     }
 
     private void RenderBoard(Object? sender, EventArgs? e)
@@ -88,14 +137,41 @@ public partial class GameWindow : Window
 		    TileStyle style = TileStyle.Of(_maze.GetTile(i));
 
 		    _renderedBoard[pos.Y, pos.X].Background = style.Color;
-		    _renderedBoard[pos.Y, pos.X].Text = style.Text;
+		    
+		    _renderedBoard[pos.Y, pos.X].Text = pos.Equals(_player.Pos) ? "\u2649" : style.Text;
 	    }
+	    
+	    tbxMoveCounter.Text = $"Moves: {_moveCounter}";
 
 	    //_metaMaze.PrintRepresentation();
     }
 
     private void RandomizeMaze()
     {
-	    _maze = new MazeCreator(_height, _width, new Vector2Int(0, 0), 2).CreateMaze();
+	    _maze = new MazeCreator(_height, _width, _rootPos, 2).CreateMaze();
+    }
+
+    private void MovePlayer(object sender, KeyEventArgs e)
+    {
+	    Vector2Int displacement = KeyToPlayerDisplacement(e.Key);
+	    
+	    if (!displacement.Equals(new Vector2Int(0, 0)))
+	    {
+		    _moveCounter = _player.MoveCounter;
+	    }
+	    
+	    _player.Move(displacement);
+    }
+
+    private static Vector2Int KeyToPlayerDisplacement(Key key)
+    {
+	    try
+	    {
+		    return s_displacements[key];
+	    }
+	    catch (KeyNotFoundException)
+	    {
+		    return new Vector2Int(0, 0);
+	    }
     }
 }

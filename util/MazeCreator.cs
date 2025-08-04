@@ -211,11 +211,11 @@ public class MazeCreator
     private bool DirectionLeadsSomewhere(CardinalDirection direction)
     {
         Vector2Int velocity = direction.GetScaledVelocity(_stepLength);
-        Vector2Int newPos = new Vector2Int(X + velocity.X, Y + velocity.Y);
+        Vector2Int targetPos = Vector2Int.Sum(Pos, velocity);
 
         try
         {
-            _maze.GetTile(newPos.Y, newPos.X);
+            _maze.GetTile(targetPos);
         }
         catch (IndexOutOfRangeException)
         {
